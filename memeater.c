@@ -24,6 +24,7 @@ main(int argc, char *argv[])
     "+"
     "f:" /* filename */
     "m:" /* memory */
+    "l"  /* lock */
     "n"; /* nowait */
 
   size_t siz = 0;
@@ -35,6 +36,7 @@ main(int argc, char *argv[])
   size_t i;
   fd_set readfds;
   int nowait = 0;
+  int lock = 0;
 
   res = sysconf(_SC_PAGESIZE);
 
@@ -51,6 +53,9 @@ main(int argc, char *argv[])
     switch (opt) {
       case '?':
         exit(EXIT_FAILURE);
+      case 'l':
+        lock = 1;
+        break;
       case 'n':
         nowait = 1;
         break;
@@ -108,14 +113,16 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  /* lock pages */
+  if (lock) {
+    /* lock pages */
 
-  res = mlock(mem, siz);
+    res = mlock(mem, siz);
 
-  if (res < 0) {
-    fprintf(stderr,
-            "failed to lock memory, pages might get evicted\n",
-            strerror(errno));
+    if (res < 0) {
+      fprintf(stderr,
+              "failed to lock memory, pages might get evicted\n",
+              strerror(errno));
+    }
   }
 
   /* touch pages to map them into address space */
