@@ -9,17 +9,22 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
+#include <sys/mman.h>
 
 int
 main(int argc, char *argv[])
 {
-  static const char optstr[] =
+  static const char optstr[] = 
     "+"
     "f:" /* filename */
-    "m:"; /* memory */
+    "m:" /* memory */
+    "n"; /* nowait */
 
   size_t siz = 0;
   char *filename = NULL;
@@ -29,6 +34,7 @@ main(int argc, char *argv[])
   unsigned char *mem;
   size_t i;
   fd_set readfds;
+  int nowait = 0;
 
   res = sysconf(_SC_PAGESIZE);
 
@@ -45,6 +51,9 @@ main(int argc, char *argv[])
     switch (opt) {
       case '?':
         exit(EXIT_FAILURE);
+      case 'n':
+        nowait = 1;
+        break;
       case 'f':
         filename = optarg;
         break;
@@ -113,6 +122,10 @@ main(int argc, char *argv[])
 
   for (i = 0; i < siz; i += pgsize) {
     mem[i] = i/pgsize;
+  }
+
+  if (nowait) {
+    while(1) { sched_yield(); }
   }
 
   /* open file for waiting */
